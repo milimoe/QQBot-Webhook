@@ -93,7 +93,7 @@ namespace Milimoe.QQBot.Services
             {
                 return (null, null, 0, "反序列化富媒体消息失败。");
             }
-            _logger.LogDebug("接收到的富媒体消息：{mediaResponse.FileInfo}，剩余时间：{mediaResponse.Ttl}", mediaResponse.FileInfo, mediaResponse.Ttl);
+            _logger.LogDebug("接收到的富媒体消息：{mediaResponse.FileInfo}，有效时间：{mediaResponse.Ttl}", mediaResponse.FileInfo, mediaResponse.Ttl);
             return (mediaResponse.FileUuid, mediaResponse.FileInfo, mediaResponse.Ttl, null);
         }
 

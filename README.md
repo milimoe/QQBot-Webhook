@@ -1,4 +1,4 @@
-# 官方 QQBot API 的 Webhook 实现
+# QQ 官方机器人 API 的 Webhook 实现
 
 基于 ASP.NET Core Web API 9.0，高性能、轻量、跨平台。
 
