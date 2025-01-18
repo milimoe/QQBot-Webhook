@@ -1,0 +1,6 @@
+@QQBot_Webhook_HostAddress = http://localhost:5139
+
+GET {{QQBot_Webhook_HostAddress}}/qqbot/
+Accept: application/json
+
+###
