@@ -2,6 +2,8 @@
 
 基于 ASP.NET Core Web API 9.0，高性能、轻量、跨平台。
 
+> 本项目是个 C#.NET SDK，具体业务逻辑需要自行编写实现。
+
 # 引用的包
 
 - Rebex.Elliptic.Ed25519（用于签名验证）
