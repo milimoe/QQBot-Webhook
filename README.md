@@ -1,11 +1,45 @@
-# QQ ¹Ù·½»úÆ÷ÈË API µÄ Webhook ÊµÏÖ
+# QQ å®˜æ–¹æœºå™¨äºº API çš„ Webhook å®ç°
 
-»ùÓÚ ASP.NET Core Web API 9.0£¬¸ßĞÔÄÜ¡¢ÇáÁ¿¡¢¿çÆ½Ì¨¡£
+åŸºäº ASP.NET Core Web API 9.0ï¼Œé«˜æ€§èƒ½ã€è½»é‡ã€è·¨å¹³å°ã€‚
 
-ÒıÓÃµÄ°ü£º
+# å¼•ç”¨çš„åŒ…
 
-- Rebex.Elliptic.Ed25519£¨ÓÃÓÚÇ©ÃûÑéÖ¤£©
+- Rebex.Elliptic.Ed25519ï¼ˆç”¨äºç­¾åéªŒè¯ï¼‰
 
-- Scalar.AspNetCore£¨Ò»¸ö·Ç³£ÃÀ¹ÛµÄ OpenApi UI£©
+- Scalar.AspNetCoreï¼ˆä¸€ä¸ªéå¸¸ç¾è§‚çš„ OpenApi UIï¼‰
 
-Webhook »Øµ÷µØÖ·£º`{·şÎñÆ÷¼àÌıµØÖ·}/qqbot`
+## ä½¿ç”¨
+
+1ã€æ„å»ºåï¼Œåœ¨ç”Ÿæˆç›®å½•ä¸‹ç¼–è¾‘ `appsettings.json` æ–‡ä»¶ï¼Œé…ç½® Bot çš„ `AppId` å’Œ `Secret`ï¼Œè¿™é‡Œä½¿ç”¨äº†[å®˜æ–¹æ–‡æ¡£](https://bot.q.qq.com/wiki/develop/api-v2/dev-prepare/interface-framework/event-emit.html#webhook%E6%96%B9%E5%BC%8F)çš„ä¾‹å­ï¼š
+
+```json
+"Bot": {
+  "AppId": "11111111",
+  "Secret": "DG5g3B4j9X2KOErG"
+}
+```
+
+2ã€é…ç½® `Kestrel` æœåŠ¡å™¨ç½‘å€ï¼ˆSSL è¯ä¹¦ `Certificate` ä»¥ pfx ä¸ºä¾‹ï¼‰ï¼š
+
+```json
+"Kestrel": {
+  "Endpoints": {
+    "Http": {
+      "Url": "http://example.com"
+    },
+    "Https": {
+      "Url": "https://example.com",
+      "Certificate": {
+        "Path": "xxx.pfx",
+        "Password": "xxx"
+      }
+    }
+  }
+},
+```
+
+`Http` ç›‘å¬å¯ä»¥åˆ é™¤ã€‚
+
+3ã€å¯åŠ¨ `QQBot.exe`ã€‚
+
+4ã€æœ€åï¼Œå°† Webhook å›è°ƒåœ°å€ï¼š`https://example.com/qqbot` å‘å¸ƒåœ¨ QQ å¼€æ”¾å¹³å°ä¸Šã€‚
