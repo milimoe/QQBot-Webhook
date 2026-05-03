@@ -13,19 +13,19 @@ namespace Milimoe.QQBot.Controllers
     [Route("[controller]")]
     public class QQBotController(IOptions<BotConfig> botConfig, ILogger<QQBotController> logger, QQBotService service) : ControllerBase
     {
-        private readonly BotConfig _botConfig = botConfig.Value;
-        private readonly ILogger<QQBotController> _logger = logger;
-        private readonly QQBotService _service = service;
+        private BotConfig BotConfig { get; set; } = botConfig.Value;
+        private ILogger<QQBotController> Logger { get; set; } = logger;
+        private QQBotService Service { get; set; } = service;
 
         [HttpPost]
-        public IActionResult Post([FromBody] Payload? payload)
+        public async Task<IActionResult> Post([FromBody] Payload? payload)
         {
             if (payload is null)
             {
                 return BadRequest("Payload 格式无效");
             }
 
-            _logger.LogDebug("收到 Webhook 请求：{payload.Op}", payload.Op);
+            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("收到 Webhook 请求：{payload.Op}", payload.Op);
 
             try
             {
@@ -36,17 +36,17 @@ namespace Milimoe.QQBot.Controllers
                 else if (payload.Op == 0)
                 {
                     // 处理其他事件
-                    return HandleEvent(payload);
+                    _ = Task.Run(async () => await HandleEventAsync(payload));
                 }
                 else
                 {
-                    _logger.LogWarning("未处理操作码：{payload.Op}", payload.Op);
-                    return Ok();
+                    if (Logger.IsEnabled(LogLevel.Warning)) Logger.LogWarning("未处理操作码：{payload.Op}", payload.Op);
                 }
+                return Ok();
             }
             catch (Exception e)
             {
-                _logger.LogError("Error: {e}", e);
+                if (Logger.IsEnabled(LogLevel.Error)) Logger.LogError("Error: {e}", e);
                 return StatusCode(500, "服务器内部错误");
             }
         }
@@ -56,10 +56,10 @@ namespace Milimoe.QQBot.Controllers
             ValidationRequest? validationPayload = JsonSerializer.Deserialize<ValidationRequest>(payload.Data.ToString() ?? "");
             if (validationPayload is null)
             {
-                _logger.LogError("反序列化验证 Payload 失败");
+                if (Logger.IsEnabled(LogLevel.Error)) Logger.LogError("反序列化验证 Payload 失败");
                 return BadRequest("无效的验证 Payload 格式");
             }
-            string seed = _botConfig.Secret;
+            string seed = BotConfig.Secret;
             while (seed.Length < 32)
             {
                 seed += seed;
@@ -80,20 +80,19 @@ namespace Milimoe.QQBot.Controllers
 
             string signature = Convert.ToHexString(result).ToLower(CultureInfo.InvariantCulture);
 
-
             ValidationResponse response = new()
             {
                 PlainToken = validationPayload.PlainToken,
                 Signature = signature
             };
             string responseJson = JsonSerializer.Serialize(response);
-            _logger.LogDebug("验证相应：{responseJson}", responseJson);
+            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("验证相应：{responseJson}", responseJson);
             return Ok(response);
         }
 
-        private IActionResult HandleEvent(Payload payload)
+        private async Task<IActionResult> HandleEventAsync(Payload payload)
         {
-            _logger.LogDebug("处理事件：{EventType}, 数据：{Data}", payload.EventType, payload.Data);
+            if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("处理事件：{EventType}, 数据：{Data}", payload.EventType, payload.Data);
 
             try
             {
@@ -103,30 +102,66 @@ namespace Milimoe.QQBot.Controllers
                         C2CMessage? c2cMessage = JsonSerializer.Deserialize<C2CMessage>(payload.Data.ToString() ?? "");
                         if (c2cMessage != null)
                         {
-                            // TODO
-                            _logger.LogInformation("收到来自用户 {c2cMessage.Author.UserOpenId} 的消息：{c2cMessage.Content}", c2cMessage.Author.UserOpenId, c2cMessage.Content);
-                            Task.Run(async () =>
+                            c2cMessage.Content = c2cMessage.Content.Trim();
+                            if (c2cMessage.Content.StartsWith('/'))
                             {
-                                // 上传图片
-                                string url = $"{Request.Scheme}://{Request.Host}{Request.PathBase}/test.png";
-                                var (fileUuid, fileInfo, ttl, error) = await _service.UploadC2CMediaAsync(c2cMessage.Author.UserOpenId, 1, url);
-                                _logger.LogDebug("发送的图片地址：{url}", url);
-                                if (string.IsNullOrEmpty(error))
-                                {
-                                    // 回复消息
-                                    await _service.SendC2CMessageAsync(c2cMessage.Author.UserOpenId, $"你发送的消息是：{c2cMessage.Content}", msgId: c2cMessage.Id);
-                                    // 回复富媒体消息
-                                    await _service.SendC2CMessageAsync(c2cMessage.Author.UserOpenId, "", msgType: 7, media: new { file_info = fileInfo }, msgId: c2cMessage.Id);
-                                }
-                                else
-                                {
-                                    _logger.LogError("上传图片失败：{error}", error);
-                                }
-                            });
+                                c2cMessage.Content = c2cMessage.Content[1..];
+                            }
+                            // TODO
+                            if (Logger.IsEnabled(LogLevel.Information)) Logger.LogInformation("收到来自用户 {c2cMessage.Author.UserOpenId} 的消息：{c2cMessage.Content}", c2cMessage.Author.UserOpenId, c2cMessage.Content);
+                            // 上传图片示例
+                            //string url = $"{Request.Scheme}://{Request.Host}{Request.PathBase}/images/zi/dj1.png";
+                            //UploadMediaResult uploadMediaResult = await Service.UploadC2CMediaAsync(c2cMessage.Author.UserOpenId, 1, url);
+                            //if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("发送的图片地址：{url}", url);
+                            //if (string.IsNullOrEmpty(uploadMediaResult.Error))
+                            //{
+                            //    // 回复消息
+                            //    await Service.SendC2CMessageAsync(c2cMessage.Author.UserOpenId, $"你发送的消息是：{c2cMessage.Content}", msgId: c2cMessage.Id);
+                            //    // 回复富媒体消息
+                            //    await Service.SendC2CMessageAsync(c2cMessage.Author.UserOpenId, "", msgType: 7, media: new { file_info = uploadMediaResult.FileInfo }, msgId: c2cMessage.Id);
+                            //}
+                            //else
+                            //{
+                            //    if (Logger.IsEnabled(LogLevel.Error)) Logger.LogError("上传图片失败：{error}", uploadMediaResult.Error);
+                            //}
+                            // 发 md 示例
+                            //// 1. 带蓝字链接
+                            //MarkdownMessage mdMsg = new()
+                            //{
+                            //    Content = "请选择：\n<qqbot-cmd-enter text=\"/签到\"/>"
+                            //};
+                            //// 2. 带按钮
+                            //KeyboardMessage kbMsg = new()
+                            //{
+                            //    Content = new()
+                            //    {
+                            //        Rows = [
+                            //            new()
+                            //            {
+                            //                Buttons = [
+                            //                    new()
+                            //                    {
+                            //                        Id = "btn1",
+                            //                        RenderData = new RenderData { Label = "同意", VisitedLabel = "已同意", Style = 1 },
+                            //                        Action = new Models.Action
+                            //                        {
+                            //                            Type = 2,
+                            //                            Data = "我同意服务条款",
+                            //                            Enter = true,
+                            //                            Reply = false,
+                            //                            Permission = new Permission { Type = 2 }
+                            //                        }
+                            //                    }
+                            //                ]
+                            //            }
+                            //        ]
+                            //    }
+                            //};
+                            //await Service.SendC2CMarkdownAsync(c2cMessage.AuthorOpenId, mdMsg, kbMsg, c2cMessage.Id);
                         }
                         else
                         {
-                            _logger.LogError("反序列化 C2C 消息数据失败");
+                            if (Logger.IsEnabled(LogLevel.Error)) Logger.LogError("反序列化 C2C 消息数据失败");
                             return BadRequest("无效的 C2C 消息数据格式");
                         }
                         break;
@@ -134,34 +169,36 @@ namespace Milimoe.QQBot.Controllers
                         GroupAtMessage? groupAtMessage = JsonSerializer.Deserialize<GroupAtMessage>(payload.Data.ToString() ?? "");
                         if (groupAtMessage != null)
                         {
-                            // TODO
-                            _logger.LogInformation("收到来自群组 {groupAtMessage.GroupOpenId} 的消息：{groupAtMessage.Content}", groupAtMessage.GroupOpenId, groupAtMessage.Content);
-                            // 回复消息
-                            Task.Run(async () =>
+                            groupAtMessage.Content = groupAtMessage.Content.Trim();
+                            if (groupAtMessage.Content.StartsWith('/'))
                             {
-                                await _service.SendGroupMessageAsync(groupAtMessage.GroupOpenId, $"你发送的消息是：{groupAtMessage.Content}", msgId: groupAtMessage.Id);
-                            });
+                                groupAtMessage.Content = groupAtMessage.Content[1..];
+                            }
+                            // TODO
+                            if (Logger.IsEnabled(LogLevel.Information)) Logger.LogInformation("收到来自群组 {groupAtMessage.GroupOpenId} 的消息：{groupAtMessage.Content}", groupAtMessage.GroupOpenId, groupAtMessage.Content);
+                            // 回复消息，其他参考 C2C，大致相同
+                            //await _service.SendGroupMessageAsync(groupAtMessage.GroupOpenId, $"你发送的消息是：{groupAtMessage.Content}", msgId: groupAtMessage.Id);
                         }
                         else
                         {
-                            _logger.LogError("反序列化群聊消息数据失败");
+                            if (Logger.IsEnabled(LogLevel.Error)) Logger.LogError("反序列化群聊消息数据失败");
                             return BadRequest("无效的群聊消息数据格式");
                         }
                         break;
                     default:
-                        _logger.LogWarning("未定义事件：{EventType}", payload.EventType);
+                        if (Logger.IsEnabled(LogLevel.Warning)) Logger.LogWarning("未定义事件：{EventType}", payload.EventType);
                         break;
                 }
                 return Ok();
             }
             catch (JsonException e)
             {
-                _logger.LogError("反序列化过程遇到错误：{e}", e);
+                if (Logger.IsEnabled(LogLevel.Error)) Logger.LogError("反序列化过程遇到错误：{e}", e);
                 return BadRequest("Invalid JSON format");
             }
             catch (Exception e)
             {
-                _logger.LogError("Error: {e}", e);
+                if (Logger.IsEnabled(LogLevel.Error)) Logger.LogError("Error: {e}", e);
                 return StatusCode(500, "服务器内部错误");
             }
         }

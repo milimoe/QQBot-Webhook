@@ -7,7 +7,7 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowSpecificOrigin", policy =>
+    options.AddPolicy("AllowAnyOrigin", policy =>
     {
         policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
     });
@@ -23,7 +23,7 @@ builder.Services.Configure<BotConfig>(builder.Configuration.GetSection("Bot"));
 WebApplication app = builder.Build();
 
 // ∆Ù”√ CORS
-app.UseCors("AllowSpecificOrigin");
+app.UseCors("AllowAllOrigin");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
