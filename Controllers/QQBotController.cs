@@ -18,7 +18,7 @@ namespace Milimoe.QQBot.Controllers
         private QQBotService Service { get; set; } = service;
 
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] Payload? payload)
+        public IActionResult Post([FromBody] Payload? payload)
         {
             if (payload is null)
             {
@@ -36,7 +36,7 @@ namespace Milimoe.QQBot.Controllers
                 else if (payload.Op == 0)
                 {
                     // 处理其他事件
-                    _ = Task.Run(async () => await HandleEventAsync(payload));
+                    return HandleEvent(payload);
                 }
                 else
                 {
@@ -90,7 +90,7 @@ namespace Milimoe.QQBot.Controllers
             return Ok(response);
         }
 
-        private async Task<IActionResult> HandleEventAsync(Payload payload)
+        private IActionResult HandleEvent(Payload payload)
         {
             if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("处理事件：{EventType}, 数据：{Data}", payload.EventType, payload.Data);
 
@@ -109,34 +109,39 @@ namespace Milimoe.QQBot.Controllers
                             }
                             // TODO
                             if (Logger.IsEnabled(LogLevel.Information)) Logger.LogInformation("收到来自用户 {c2cMessage.Author.UserOpenId} 的消息：{c2cMessage.Content}", c2cMessage.Author.UserOpenId, c2cMessage.Content);
-                            // 上传图片示例
-                            //string url = $"{Request.Scheme}://{Request.Host}{Request.PathBase}/images/zi/dj1.png";
-                            //UploadMediaResult uploadMediaResult = await Service.UploadC2CMediaAsync(c2cMessage.Author.UserOpenId, 1, url);
-                            //if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("发送的图片地址：{url}", url);
-                            //if (string.IsNullOrEmpty(uploadMediaResult.Error))
+                            //// 上传图片示例
+                            //Task.Run(async () =>
                             //{
-                            //    // 回复消息
-                            //    await Service.SendC2CMessageAsync(c2cMessage.Author.UserOpenId, $"你发送的消息是：{c2cMessage.Content}", msgId: c2cMessage.Id);
-                            //    // 回复富媒体消息
-                            //    await Service.SendC2CMessageAsync(c2cMessage.Author.UserOpenId, "", msgType: 7, media: new { file_info = uploadMediaResult.FileInfo }, msgId: c2cMessage.Id);
-                            //}
-                            //else
-                            //{
-                            //    if (Logger.IsEnabled(LogLevel.Error)) Logger.LogError("上传图片失败：{error}", uploadMediaResult.Error);
-                            //}
-                            // 发 md 示例
-                            //// 1. 带蓝字链接
-                            //MarkdownMessage mdMsg = new()
-                            //{
-                            //    Content = "请选择：\n<qqbot-cmd-enter text=\"/签到\"/>"
-                            //};
-                            //// 2. 带按钮
-                            //KeyboardMessage kbMsg = new()
-                            //{
-                            //    Content = new()
+                            //    string url = $"{Request.Scheme}://{Request.Host}{Request.PathBase}/images/zi/dj1.png";
+                            //    UploadMediaResult uploadMediaResult = await Service.UploadC2CMediaAsync(c2cMessage.Author.UserOpenId, 1, url);
+                            //    if (Logger.IsEnabled(LogLevel.Debug)) Logger.LogDebug("发送的图片地址：{url}", url);
+                            //    if (string.IsNullOrEmpty(uploadMediaResult.Error))
                             //    {
-                            //        Rows = [
-                            //            new()
+                            //        // 回复消息
+                            //        await Service.SendC2CMessageAsync(c2cMessage.Author.UserOpenId, $"你发送的消息是：{c2cMessage.Content}", msgId: c2cMessage.Id);
+                            //        // 回复富媒体消息
+                            //        await Service.SendC2CMessageAsync(c2cMessage.Author.UserOpenId, "", msgType: 7, media: new { file_info = uploadMediaResult.FileInfo }, msgId: c2cMessage.Id);
+                            //    }
+                            //    else
+                            //    {
+                            //        if (Logger.IsEnabled(LogLevel.Error)) Logger.LogError("上传图片失败：{error}", uploadMediaResult.Error);
+                            //    }
+                            //});
+                            //// 发 md 示例
+                            //Task.Run(async () =>
+                            //{
+                            //    // 1. 带蓝字链接
+                            //    MarkdownMessage mdMsg = new()
+                            //    {
+                            //        Content = "请选择：\n<qqbot-cmd-enter text=\"/签到\"/>"
+                            //    };
+                            //    // 2. 带按钮
+                            //    KeyboardMessage kbMsg = new()
+                            //    {
+                            //        Content = new()
+                            //        {
+                            //            Rows = [
+                            //                new()
                             //            {
                             //                Buttons = [
                             //                    new()
@@ -154,10 +159,11 @@ namespace Milimoe.QQBot.Controllers
                             //                    }
                             //                ]
                             //            }
-                            //        ]
-                            //    }
-                            //};
-                            //await Service.SendC2CMarkdownAsync(c2cMessage.AuthorOpenId, mdMsg, kbMsg, c2cMessage.Id);
+                            //            ]
+                            //        }
+                            //    };
+                            //    await Service.SendC2CMarkdownAsync(c2cMessage.Author.UserOpenId, mdMsg, kbMsg, c2cMessage.Id);
+                            //});
                         }
                         else
                         {
@@ -176,13 +182,37 @@ namespace Milimoe.QQBot.Controllers
                             }
                             // TODO
                             if (Logger.IsEnabled(LogLevel.Information)) Logger.LogInformation("收到来自群组 {groupAtMessage.GroupOpenId} 的消息：{groupAtMessage.Content}", groupAtMessage.GroupOpenId, groupAtMessage.Content);
-                            // 回复消息，其他参考 C2C，大致相同
-                            //await _service.SendGroupMessageAsync(groupAtMessage.GroupOpenId, $"你发送的消息是：{groupAtMessage.Content}", msgId: groupAtMessage.Id);
+                            //// 回复消息，其他参考 C2C，大致相同
+                            //Task.Run(async () => await Service.SendGroupMessageAsync(groupAtMessage.GroupOpenId, $"你发送的消息是：{groupAtMessage.Content}", msgId: groupAtMessage.Id));
                         }
                         else
                         {
                             if (Logger.IsEnabled(LogLevel.Error)) Logger.LogError("反序列化群聊消息数据失败");
                             return BadRequest("无效的群聊消息数据格式");
+                        }
+                        break;
+                    case "INTERACTION_CREATE":
+                        InteractionEvent? interaction = JsonSerializer.Deserialize<InteractionEvent>(payload.Data.ToString() ?? "");
+                        if (interaction != null)
+                        {
+                            // 提取按钮ID和数据
+                            string buttonId = interaction.Data?.Resolved?.ButtonId ?? "";
+                            string buttonData = interaction.Data?.Resolved?.ButtonData ?? "";
+
+                            if (Logger.IsEnabled(LogLevel.Information))
+                            {
+                                Logger.LogInformation("收到按钮点击：ButtonId={buttonId}, Data={buttonData}, User={user}", buttonId, buttonData, interaction.UserOpenId);
+                            }
+
+                            //// TODO
+                            //if (interaction.ChatType == 1)
+                            //{
+                            //    Task.Run(async () => await Service.SendGroupMessageAsync(interaction.GroupOpenId, $"你点击了按钮：{buttonData}"));
+                            //}
+                            //else if (interaction.ChatType == 2)
+                            //{
+                            //    Task.Run(async () => await Service.SendC2CMessageAsync(interaction.UserOpenId, $"你点击了按钮：{buttonData}"));
+                            //}
                         }
                         break;
                     default:
