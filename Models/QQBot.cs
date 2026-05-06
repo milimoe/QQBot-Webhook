@@ -257,8 +257,9 @@ namespace Milimoe.QQBot.Models
         /// <param name="visitedLabel">点击后显示的文本，为 null 则与 label 相同</param>
         /// <param name="style">按钮样式：0 = 灰色，1 = 蓝色</param>
         /// <param name="permissionType">权限类型：0 = 指定用户，1 = 管理者，2 = 所有人</param>
+        /// <param name="specifyUserIds">当权限类型 = 0 时，需指定用户 OpenID</param>
         /// <returns></returns>
-        public static Button CreateCmdButton(string label, string data, bool enter = true, bool reply = false, string? visitedLabel = null, int style = 1, int permissionType = 2)
+        public static Button CreateCmdButton(string label, string data, bool enter = true, bool reply = false, string? visitedLabel = null, int style = 1, int permissionType = 2, params List<string> specifyUserIds)
         {
             return new Button
             {
@@ -275,7 +276,7 @@ namespace Milimoe.QQBot.Models
                     Data = data,
                     Enter = enter,
                     Reply = reply,
-                    Permission = new Permission { Type = permissionType }
+                    Permission = new Permission { Type = permissionType, SpecifyUserIds = specifyUserIds }
                 }
             };
         }
@@ -290,8 +291,9 @@ namespace Milimoe.QQBot.Models
         /// <param name="visitedLabel">点击后显示的文本，为 null 则与 label 相同</param>
         /// <param name="style">按钮样式：0 = 灰色，1 = 蓝色</param>
         /// <param name="permissionType">权限类型：0 = 指定用户，1 = 管理者，2 = 所有人</param>
+        /// <param name="specifyUserIds">当权限类型 = 0 时，需指定用户 OpenID</param>
         /// <returns></returns>
-        public static Button CreateInteractionButton(string label, string data, string? visitedLabel = null, int style = 1, int permissionType = 2)
+        public static Button CreateInteractionButton(string label, string data, string? visitedLabel = null, int style = 1, int permissionType = 2, params List<string> specifyUserIds)
         {
             return new Button
             {
@@ -306,7 +308,7 @@ namespace Milimoe.QQBot.Models
                 {
                     Type = 1,
                     Data = data,
-                    Permission = new Permission { Type = permissionType }
+                    Permission = new Permission { Type = permissionType, SpecifyUserIds = specifyUserIds }
                 }
             };
         }
@@ -379,6 +381,9 @@ namespace Milimoe.QQBot.Models
     {
         [JsonPropertyName("type")]
         public int Type { get; set; }
+
+        [JsonPropertyName("specify_user_ids")]
+        public List<string> SpecifyUserIds { get; set; } = [];
     }
 
     public class InteractionEvent
